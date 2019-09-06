@@ -35,17 +35,29 @@
         pullUpLoad: this.pullUpLoad
       })
       // 2.监听滚动位置
-      this.scroll.on('scroll', (position) => {
-        this.$emit('scrollPos', position)
-      })
+      if (this.probeType === 2 || this.probeType===3){
+        this.scroll.on('scroll', (position) => {
+          this.$emit('scrollPos', position)
+        })
+      }
+      // 3.监听scroll滚动到底部
+      if (this.pullUpLoad)
+        this.scroll.on('pullingUp', () => {
+          this.$emit('pullingUp')
+        })
     },
+
     methods: {
       scrollTo(x, y, time=300){
         this.scroll && this.scroll.scrollTo(x, y, time)
       },
       refresh(){
         this.scroll && this.scroll.refresh()
+      },
+      finishPullUp(){
+        this.scroll && this.scroll.finishPullUp()
       }
+
     }
   }
 </script>

@@ -4,6 +4,8 @@
   <scroll class="content"
           ref="scroll"
           :probe-type="3"
+          :pull-up-load="true"
+          @pullingUp = "pullingUp"
           @scrollPos="scrollPos">
     <home-swiper :banners="banners"></home-swiper>
     <recommend-view :recommends="recommends"/>
@@ -98,6 +100,9 @@
       scrollPos(position){
         this.isShowBackTop = ( - position.y > 1000)
       },
+      pullingUp() {
+        this.getHomeGoods(this.currentType)
+      },
 
       /**
        * 网络请求相关的方法
@@ -113,6 +118,7 @@
         getHomeGoods(type, page).then(res => {
           this.goods[type].list.push(...res.data.list)
           this.goods[type].page = res.data.page
+          this.$refs.scroll.finishPullUp()
         })
       }
     }
