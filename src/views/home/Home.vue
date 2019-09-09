@@ -1,20 +1,32 @@
 <template>
-<div id="home" class="wrapper">
-  <nav-bar class="home-nav"><div slot="center">购物街</div></nav-bar>
-  <scroll class="content"
-          ref="scroll"
-          :probe-type="3"
-          :pull-up-load="true"
-          @pullingUp = "pullingUp"
-          @scrollPos="scrollPos">
-    <home-swiper :banners="banners"></home-swiper>
-    <recommend-view :recommends="recommends"/>
-    <feature-view></feature-view>
-    <tab-control :titles="['流行', '新款', '精选']" class="tab-control" @tabClick="tabClick"></tab-control>
-    <goods-list :goods="showGoods"></goods-list>
-  </scroll>
-  <back-top @click.native="backClick" v-show="isShowBackTop"/>
-</div>
+  <div id="home" class="wrapper">
+    <nav-bar class="home-nav"><div slot="center">购物街</div></nav-bar>
+    <tab-control
+      :titles="['流行', '新款', '精选']"
+      @tabClick="tabClick"
+      class="tab-control"
+      ref="tabControl1"
+      v-show="isTabFixed" />
+    <scroll class="content"
+            ref="scroll"
+            :probe-type="3"
+            :pull-up-load="true"
+            @pullingUp = "pullingUp"
+            @scrollPos="scrollPos">
+      <home-swiper
+        :banners="banners"
+        ref="homeSwiper">
+      </home-swiper>
+      <recommend-view :recommends="recommends"/>
+      <feature-view/>
+      <tab-control
+        :titles="['流行', '新款', '精选']"
+        @tabClick="tabClick"
+        ref="tabControl2"/>
+      <goods-list :goods="showGoods"/>
+    </scroll>
+    <back-top @click.native="backClick" v-show="isShowBackTop"/>
+  </div>
 </template>
 
 <script>
@@ -55,6 +67,8 @@
         },
         currentType: 'pop',
         isShowBackTop: false,
+        tabOffsetTop: 0,
+        isTabFixed: false
       }
     },
     computed:{
@@ -64,17 +78,22 @@
     },
     created() {
       // 1.请求多个数据
-      this.getHomeMultidata()
+      this.__getHomeMultidata()
       // 2.请求商品数据
-      this.getHomeGoods('pop')
-      this.getHomeGoods('new')
-      this.getHomeGoods('sell')
+      this.__getHomeGoods('pop')
+      this.__getHomeGoods('new')
+      this.__getHomeGoods('sell')
     },
     mounted(){
-      // 3.事件总线
+      // 3.事件总线 图片加载完成的事件监听
       const refresh = debounce(this.$refs.scroll.refresh, 50)
       this.$bus.$on('itemImageLoad', () => {
         refresh()
+      })
+
+      const swiperImageLoad = debounce(this.swiperImageLoad, 10)
+      this.$refs.homeSwiper.$on('swiperImageLoad', () => {
+        swiperImageLoad()
       })
     },
     methods: {
@@ -82,42 +101,51 @@
        * 事件监听相关的方法
        */
       tabClick(index){
-      switch (index) {
-        case 0:
-          this.currentType = 'pop'
-          break
-        case 1:
-          this.currentType = 'new'
-          break
-        case 2:
-          this.currentType = 'sell'
-          break
-      }
-    },
+        switch (index) {
+          case 0:
+            this.currentType = 'pop'
+            break
+          case 1:
+            this.currentType = 'new'
+            break
+          case 2:
+            this.currentType = 'sell'
+            break
+        }
+        this.$refs.tabControl1.currentIndex = index
+        this.$refs.tabControl2.currentIndex = index
+      },
       backClick(){
         this.$refs.scroll.scrollTo(0, 0)
       },
       scrollPos(position){
-        this.isShowBackTop = ( - position.y > 1000)
+        // 1.判断isShowBackTop是否显示
+        this.isShowBackTop = (- position.y) > 1000
+        // 2.决定tabControl是否吸顶(position: fixed)
+        this.isTabFixed = ( - position.y) > this.tabOffsetTop
       },
       pullingUp() {
         this.getHomeGoods(this.currentType)
       },
-
+      swiperImageLoad(){
+        this.tabOffsetTop = this.$refs.tabControl2.$el.offsetTop;
+        console.log(this.tabOffsetTop);
+      },
       /**
        * 网络请求相关的方法
        */
-      getHomeMultidata(){
+      __getHomeMultidata(){
         getHomeMultidata().then(res => {
           this.banners = res.data.banner.list;
           this.recommends = res.data.recommend.list
         })
       },
-      getHomeGoods(type){
+      __getHomeGoods(type){
         const page = this.goods[type].page + 1
         getHomeGoods(type, page).then(res => {
           this.goods[type].list.push(...res.data.list)
           this.goods[type].page = res.data.page
+          // 完成了上拉加载更多
           this.$refs.scroll.finishPullUp()
         })
       }
@@ -127,24 +155,27 @@
 
 <style scoped>
   #home {
-    padding-top: 44px;
+    /*padding-top: 44px;*/
     /* v-h */
     height: 100vh;
     position: relative;
   }
+  /*.tabControl{*/
+  /*  position: relative;*/
+  /*}*/
+
   .home-nav{
     background-color: var(--color-tint);
     color: #fff;
-    position: fixed;
-    left: 0;
-    right:0;
-    top: 0;
-    z-index: 9;
+    /*在使用浏览器原生滚动时,为了让导航不跟随一起滚动*/
+    /*position: fixed;*/
+    /*left: 0;*/
+    /*right:0;*/
+    /*top: 0;*/
+    /*z-index: 9;*/
   }
   .tab-control{
-    position: sticky;
-    top: 44px;
-    background-color: #fff;
+    position: relative;
     z-index: 9;
   }
   .content{

@@ -41,6 +41,7 @@
     width: 100%;
     text-align: center;
     font-size: 14px;
+    background-color: #fff;
 }
   .tab-control-item{
     flex: 1;
