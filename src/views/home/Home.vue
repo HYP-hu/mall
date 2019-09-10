@@ -68,7 +68,8 @@
         currentType: 'pop',
         isShowBackTop: false,
         tabOffsetTop: 0,
-        isTabFixed: false
+        isTabFixed: false,
+        saveY: 0,
       }
     },
     computed:{
@@ -95,6 +96,13 @@
       this.$refs.homeSwiper.$on('swiperImageLoad', () => {
         swiperImageLoad()
       })
+    },
+    activated(){
+      this.$refs.scroll.refresh()
+      this.$refs.scroll.scrollTo(0, this.saveY, 0)
+    },
+    deactivated(){
+      this.saveY = this.$refs.scroll.getScrollY()
     },
     methods: {
       /**
@@ -125,11 +133,10 @@
         this.isTabFixed = ( - position.y) > this.tabOffsetTop
       },
       pullingUp() {
-        this.getHomeGoods(this.currentType)
+        this.__getHomeGoods(this.currentType)
       },
       swiperImageLoad(){
         this.tabOffsetTop = this.$refs.tabControl2.$el.offsetTop;
-        console.log(this.tabOffsetTop);
       },
       /**
        * 网络请求相关的方法
